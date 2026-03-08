@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Blue-point</title>
+<style>
+  :root{ --bg:#061024; --panel:#071426; --card:#071821; --accent:#3aa0ff; --text:#dbefff; --muted:#7e9ab3; --glass: rgba(255,255,255,0.02); --font-size:16px }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:var(--font-size)}
+  /* Desktop */
+  #desktop{position:relative;height:100vh;overflow:hidden;background:#021026}
+  #wallpaper{position:absolute;inset:0;z-index:0;background-position:center;background-size:cover}
+  .icons{position:absolute;left:18px;top:18px;display:grid;grid-auto-rows:92px;gap:12px;z-index:6}
+  .icon{width:180px;padding:10px;border-radius:10px;display:flex;align-items:center;gap:12px;cursor:pointer;background:transparent}
+  .icon .ico{width:56px;height:56px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .icon .label{font-size:14px;color:var(--muted)}
+  .icon:hover{background:rgba(255,255,255,0.02)}
+  /* Taskbar */
+  #taskbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:linear-gradient(180deg,rgba(0,0,0,0.25),rgba(0,0,0,0.5));display:flex;align-items:center;padding:8px 12px;gap:12px;z-index:9}
+  .start{width:44px;height:40px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .task-area{display:flex;gap:8px;align-items:center;flex:1}
+  .tray{display:flex;gap:10px;align-items:center}
+  .clock{font-size:13px;color:var(--muted)}
+  /* Window */
+  .win{position:absolute;background:linear-gradient(180deg,#071426,#0b2130);border:1px solid rgba(255,255,255,0.03);box-shadow:0 30px 80px rgba(0,0,0,0.7);border-radius:10px;overflow:hidden;z-index:10;resize:none}
+  .title{display:flex;align-items:center;gap:8px;padding:8px 10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);cursor:move}
+  .title .caption{flex:1;font-weight:700}
+  .title button{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px}
+  .body{padding:12px;height:calc(100% - 46px);overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+  .resizer{position:absolute;width:14px;height:14px;right:6px;bottom:6px;cursor:se-resize;border-radius:3px;background:linear-gradient(180deg,rgba(255,255,255,0.03),transparent)}
+  .floating{opacity:0.98;transform:translateZ(0)}
+  /* Explorer */
+  .explorer{display:flex;gap:12px;height:100%}
+  .nav{width:240px;background:var(--glass);padding:10px;border-radius:8px}
+  .nav .item{padding:8px;border-radius:6px;cursor:pointer;color:var(--muted);margin-bottom:6px}
+  .files{flex:1;background:rgba(0,0,0,0.02);padding:10px;border-radius:8px}
+  .file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .file-card{background:#07131a;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .thumb{height:90px;background:#020202;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ad}
+  .controls{display:flex;gap:8px;margin-top:8px}
+  .btn{background:linear-gradient(90deg,var(--accent),#00b0ff);border:none;color:#012;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .small{color:var(--muted);font-size:13px}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:50}
+  .card-wide{width:980px;max-width:96%;background:linear-gradient(180deg,#071426,#041121);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.03)}
+  input,select,textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px;border-radius:6px}
+  .diag{background:#07121a;padding:12px;border-radius:8px;margin-top:8px}
+  @media (max-width:900px){ :root{--font-size:14px} .icons{left:8px;top:8px} }
+</style>
+</head>
+<body>
+  <div id="desktop">
+    <div id="wallpaper"></div>
+    <div class="icons" id="desktop-icons"></div>
+    <div id="taskbar">
+      <div class="start" id="btn-start">☰</div>
+      <div class="task-area" id="task-area"></div>
+      <div class="tray"><div class="small" id="user-label">Blue-point</div><div class="clock" id="clock"></div></div>
+    </div>
+  </div>
+
+  <!-- Start menu -->
+  <div id="start-menu" class="modal" style="align-items:flex-end;justify-content:flex-start;left:12px;bottom:72px;pointer-events:auto;">
+    <div class="card-wide" style="padding:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:800;font-size:18px">Blue-point</div><div class="small">Web OS — single file</div></div>
+        <div><button class="btn" id="open-explorer">Explorer</button></div>
+      </div>
+      <hr style="margin:8px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)"/>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="open-browser">Browser</button>
+        <button class="btn" id="open-store">Store</button>
+        <button class="btn" id="open-settings">Settings</button>
+        <button class="btn" id="add-shortcut">+ Shortcut</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Browser modal -->
+  <div id="browser-modal" class="modal">
+    <div class="card-wide">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="browser-url" placeholder="https://example.org" style="flex:1"/>
+        <button class="btn" id="browser-load">Load</button>
+        <button class="btn" id="browser-newtab">Open new tab</button>
+        <button class="btn" id="browser-close">Close</button>
+      </div>
+      <iframe id="browser-frame" style="width:100%;height:640px;border-radius:8px;border:1px solid rgba(0,0,0,0.12);background:#fff"></iframe>
+      <div class="small" style="margin-top:8px">Loader: tries direct embed → fetch→proxy→open new tab. If connection refused, see diagnostics.</div>
+      <div id="diag-box" class="diag small hidden"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button id="diag-try-proxies" class="btn">Try alternative proxies</button><button id="diag-copy" class="btn">Copy URL</button><button id="diag-open" class="btn">Open in new tab</button></div>
+    </div>
+  </div>
+
+  <!-- Store modal (name + url input to install app) -->
+  <div id="store-modal" class="modal">
+    <div class="card-wide">
+      <h3>Store / Downloader / Install App</h3>
+      <div class="small">Cole uma URL pública (raw github, archive.org, arquivos diretos) ou instale como app.</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="store-name" placeholder="Nome do app (ex: MyApp)" style="width:220px" />
+        <input id="store-url" placeholder="https://..." style="flex:1"/>
+        <button class="btn" id="store-install">Install as App</button>
+        <button class="btn" id="store-download">Download to FS</button>
+        <button class="btn" id="store-close">Close</button>
+      </div>
+      <hr style="margin:12px 0"/>
+      <div id="store-curated" class="file-grid"></div>
+    </div>
+  </div>
+
+  <!-- Explorer modal -->
+  <div id="explorer-modal" class="modal">
+    <div class="card-wide">
+      <h3>File Manager</h3>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="file" id="file-upload" multiple />
+        <input id="new-folder" placeholder="New folder name (optional)" />
+        <button class="btn" id="mk-folder">Create</button>
+        <button class="btn" id="explorer-refresh">Refresh</button>
+        <button class="btn" id="explorer-close">Close</button>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div class="nav"><div style="font-weight:700;margin-bottom:8px">Folders</div><div id="folders-list" class="small"></div></div>
+        <div class="files"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">Files</div><div class="small">Storage: localStorage (limited)</div></div><div id="files-grid" class="file-grid" style="margin-top:8px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal" class="modal">
+    <div class="card-wide">
+      <h3>Settings</h3>
+      <div class="small">Wallpaper / Font / Reset / Floating windows</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="cfg-wall" placeholder="Wallpaper image URL" style="flex:1"/>
+        <input id="cfg-font" placeholder="font-size (ex:16px)" style="width:120px"/>
+        <button class="btn" id="cfg-save">Save</button>
+        <button class="btn" id="cfg-reset">Reset</button>
+        <button class="btn" id="cfg-close">Close</button>
+      </div>
+      <div style="margin-top:10px" class="small">Tip: use direct image URLs (jpeg/png). CORS may block some hosts. Floating windows support added (toggle per-window).</div>
+    </div>
+  </div>
+
+<script>
+// ========= Blue-point WebOS (proxy + diagnostics improvements) =========
+const LS = localStorage;
+const APPS_KEY = 'bp_apps_v1';
+const FS_PREFIX = 'bpfs_v1:';
+const CFG_WALL = 'bp_cfg_wallpaper';
+const CFG_FONT = 'bp_cfg_fontsize';
+
+function saveApps(arr){ LS.setItem(APPS_KEY, JSON.stringify(arr)); }
+function loadApps(){ try{ return JSON.parse(LS.getItem(APPS_KEY) || '[]'); }catch(e){ return []; } }
+function fsListKeys(){ const out=[]; for(let i=0;i<LS.length;i++){ const k = LS.key(i); if(k && k.startsWith(FS_PREFIX)) out.push(k);} return out.sort(); }
+function fsRead(k){ return LS.getItem(k); }
+function fsWrite(k,v){ LS.setItem(k,v); }
+function fsRemove(k){ LS.removeItem(k); }
+
+// Desktop
+const desktopIcons = document.getElementById('desktop-icons');
+function renderDesktop(){ desktopIcons.innerHTML=''; const apps = loadApps(); if(!apps.find(a=>a.id==='browser')) apps.unshift({id:'browser',name:'Browser',url:'https://example.org',icon:'🌐'}); if(!apps.find(a=>a.id==='store')) apps.push({id:'store',name:'Store',url:'',icon:'🛒'}); if(!apps.find(a=>a.id==='explorer')) apps.push({id:'explorer',name:'Files',url:'',icon:'📁'}); saveApps(apps);
+  apps.forEach(app=>{ const el=document.createElement('div'); el.className='icon'; el.draggable=true; el.innerHTML=`<div class="ico">${app.icon||app.name[0]}</div><div class="label">${app.name}</div>`; el.ondblclick = ()=> openApp(app); el.oncontextmenu = e=>{ e.preventDefault(); if(confirm('Remove shortcut '+app.name+'?')){ const arr=loadApps().filter(x=>x.id!==app.id); saveApps(arr); renderDesktop(); }}; el.addEventListener('dragstart', ev=> ev.dataTransfer.setData('text/bp-app', app.id)); desktopIcons.appendChild(el); }); }
+function addShortcut(obj){ const arr=loadApps(); obj.id = obj.id || ('app_' + Date.now()); try{ obj.icon = obj.icon || (obj.url ? ('<img src="https://www.google.com/s2/favicons?sz=64&domain=' + (new URL(obj.url)).hostname + '" style="width:22px;height:22px;border-radius:4px"/>') : obj.name[0]); }catch(e){ obj.icon = obj.icon || obj.name[0]; } arr.push(obj); saveApps(arr); renderDesktop(); }
+function openApp(app){ if(app.id==='browser') openBrowserModal(app.url||''); else if(app.id==='store') openStoreModal(); else if(app.id==='explorer') openExplorerModal(); else if(app.url) openBrowserModal(app.url); }
+
+// Window manager
+const taskArea = document.getElementById('task-area');
+let zIndexCounter = 100;
+function makeWindow(title, opts={w:920,h:620,left:80,top:60}){
+  const win = document.createElement('div'); win.className='win'; win.style.width = opts.w + 'px'; win.style.height = opts.h + 'px'; win.style.left = opts.left+'px'; win.style.top = opts.top+'px'; win.style.zIndex = ++zIndexCounter;
+  const t = document.createElement('div'); t.className='title'; t.innerHTML = `<div class="caption">${title}</div><div><button class="top">⇪</button><button class="min">_</button><button class="close">✕</button></div>`;
+  const b = document.createElement('div'); b.className='body'; const resizer = document.createElement('div'); resizer.className='resizer'; win.appendChild(t); win.appendChild(b); win.appendChild(resizer); document.body.appendChild(win);
+  let dragging=false, ox=0, oy=0; t.addEventListener('mousedown', e=>{ dragging=true; ox = e.clientX - win.offsetLeft; oy = e.clientY - win.offsetTop; win.style.zIndex = ++zIndexCounter; });
+  window.addEventListener('mousemove', e=>{ if(dragging){ win.style.left = (e.clientX - ox) + 'px'; win.style.top = (e.clientY - oy) + 'px'; } });
+  window.addEventListener('mouseup', ()=> dragging=false);
+  let resizing=false, rw=0, rh=0, rmx=0, rmy=0; resizer.addEventListener('mousedown', e=>{ resizing=true; rw = win.offsetWidth; rh = win.offsetHeight; rmx = e.clientX; rmy = e.clientY; e.stopPropagation(); });
+  window.addEventListener('mousemove', e=>{ if(resizing){ win.style.width = Math.max(300, rw + (e.clientX - rmx)) + 'px'; win.style.height = Math.max(200, rh + (e.clientY - rmy)) + 'px'; } });
+  window.addEventListener('mouseup', ()=> resizing=false);
+  t.querySelector('.close').onclick = ()=>{ win.remove(); taskBtn.remove(); };
+  t.querySelector('.min').onclick = ()=>{ win.style.display = 'none'; };
+  const topBtn = t.querySelector('.top'); topBtn.title = 'Toggle always on top'; topBtn.onclick = ()=>{ if(win.classList.contains('floating')){ win.classList.remove('floating'); topBtn.style.opacity = '1'; } else { win.classList.add('floating'); topBtn.style.opacity='0.6'; win.style.zIndex = ++zIndexCounter; } };
+  const taskBtn = document.createElement('button'); taskBtn.className='btn'; taskBtn.textContent = title; taskBtn.onclick = ()=>{ if(win.style.display==='none'){ win.style.display='block'; win.style.zIndex = ++zIndexCounter; } else { win.style.display = 'none'; } };
+  taskArea.appendChild(taskBtn);
+  return {win, body:b, taskBtn};
+}
+
+// Robust URL handling + proxies + diagnostics
+const PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://thingproxy.freeboard.io/fetch/',
+  'https://corsproxy.io/?',
+  'https://api.allorigins.cf/raw?url='
+];
+
+function looksLikeUrl(s){ try{ if(!s) return false; if(s.includes(' ')) return false; if(s.match(/\.[a-z]{2,}$/i)) return true; if(s.startsWith('http://')||s.startsWith('https://')||s.startsWith('//')) return true; return false;}catch(e){return false;} }
+
+function normalizeUrl(input){ input = String(input || '').trim(); if(!input) return 'about:blank'; if(looksLikeUrl(input)){ if(input.startsWith('//')) return 'https:' + input; if(input.startsWith('http://')||input.startsWith('https://')) return input; return 'https://' + input; } // treat as search
+  return 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(input);
+}
+
+async function tryLoadDirect(iframe, url, timeout=2000){ try{ iframe.src = url; const loaded = await new Promise(resolve=>{ let done=false; function onLoad(){ if(done) return; done=true; iframe.removeEventListener('load', onLoad); resolve(true);} iframe.addEventListener('load', onLoad); setTimeout(()=>{ if(done) return; iframe.removeEventListener('load', onLoad); resolve(false); }, timeout); }); return loaded }catch(e){ return false } }
+
+async function fetchToBlobUrl(url){ const resp = await fetch(url, {mode:'cors'}); if(!resp.ok) throw new Error('fetch failed ' + resp.status); const text = await resp.text(); const base = '<base href="' + url.replace(/"/g,'') + '">'; const blob = new Blob([base + text], {type:'text/html'}); return URL.createObjectURL(blob); }
+
+async function robustLoad(iframe, rawUrl, diagEl){ diagEl = diagEl || document.getElementById('diag-box'); diagEl.classList.add('hidden'); diagEl.textContent = '';
+  const url = normalizeUrl(rawUrl);
+  // 1. direct iframe
+  diagEl.classList.remove('hidden'); diagEl.innerHTML = 'Trying direct embed...';
+  if(await tryLoadDirect(iframe, url, 2500)) { diagEl.innerHTML = 'Loaded by direct embed.'; return {mode:'direct', url}; }
+  // 2. try fetch->blob
+  diagEl.innerHTML = 'Direct failed — trying fetch + blob (CORS)...';
+  try{ const blobUrl = await fetchToBlobUrl(url); if(await tryLoadDirect(iframe, blobUrl, 2000)) { diagEl.innerHTML = 'Loaded by fetch->blob.'; return {mode:'blob', url:blobUrl}; } URL.revokeObjectURL(blobUrl); }catch(e){ console.warn('fetch->blob failed', e); }
+  // 3. try proxies sequentially
+  diagEl.innerHTML = 'Fetch failed — trying public proxies...';
+  for(let p of PROXIES){ try{ diagEl.innerHTML = 'Trying proxy: ' + p; const proxyUrl = p + encodeURIComponent(url); const blob = await fetch(proxyUrl, {mode:'cors',cache:'no-store'}); if(!blob.ok){ diagEl.innerHTML = 'Proxy responded with ' + blob.status + ' for ' + p; continue; } const text = await blob.text(); const base = '<base href="' + url.replace(/"/g,'') + '">'; const blobUrl = URL.createObjectURL(new Blob([base + text], {type:'text/html'})); if(await tryLoadDirect(iframe, blobUrl, 2000)) { diagEl.innerHTML = 'Loaded via proxy: ' + p; return {mode:'proxy', url:blobUrl, proxy:p}; } URL.revokeObjectURL(blobUrl); }catch(e){ console.warn('proxy failed', p, e); diagEl.innerHTML = 'Proxy failed: ' + p; continue; } }
+  // 4. failed all
+  diagEl.innerHTML = 'Embed failed. Connection refused or blocked by remote host. Showing diagnostics and options.';
+  return {mode:'newtab', url};
+}
+
+async function openBrowserModal(initial){ const modal = document.getElementById('browser-modal'); const iframe = document.getElementById('browser-frame'); const urlIn = document.getElementById('browser-url'); urlIn.value = initial || urlIn.value || ''; modal.style.display = 'flex'; const diagEl = document.getElementById('diag-box'); diagEl.classList.add('hidden'); diagEl.textContent = '';
+  const res = await robustLoad(iframe, urlIn.value || initial, diagEl);
+  if(res.mode === 'newtab'){ // show diagnostics UI
+    diagEl.classList.remove('hidden'); diagEl.innerHTML = `<strong>Could not embed the URL.</strong> Possible causes: network blocked, server refused connection, site forbids embedding (X-Frame-Options/CSP).<br><br>Actions: try proxies (below), open in a new tab, or copy the URL.`;
+    document.getElementById('diag-try-proxies').onclick = async ()=>{ diagEl.innerHTML = 'Retrying proxies...'; const r2 = await robustLoad(iframe, urlIn.value || initial, diagEl); if(r2.mode === 'newtab'){ diagEl.innerHTML += '<br>Proxies failed. You can open in a new tab or copy the URL.'; } };
+    document.getElementById('diag-copy').onclick = ()=>{ navigator.clipboard.writeText(res.url).then(()=> alert('URL copied to clipboard')); };
+    document.getElementById('diag-open').onclick = ()=>{ window.open(res.url, '_blank'); };
+    return;
+  }
+}
+
+// Wire buttons
+document.getElementById('browser-load').onclick = ()=> openBrowserModal(document.getElementById('browser-url').value.trim());
+document.getElementById('browser-newtab').onclick = ()=> { const u = normalizeUrl(document.getElementById('browser-url').value); if(u) window.open(u,'_blank'); };
+document.getElementById('browser-close').onclick = ()=> { document.getElementById('browser-frame').src='about:blank'; document.getElementById('browser-modal').style.display='none'; };
+
+// Store & install
+const curated = [ {title:'Example text', url:'https://www.w3.org/TR/PNG/iso_8859-1.txt'}, {title:'GitHub RAW (README)', url:'https://raw.githubusercontent.com/github/gitignore/main/README.md'}, {title:'Archive.org', url:'https://archive.org/details/software'} ];
+function openStoreModal(){ const m=document.getElementById('store-modal'); const curatedEl=document.getElementById('store-curated'); curatedEl.innerHTML=''; curated.forEach(it=>{ const c=document.createElement('div'); c.className='file-card'; c.innerHTML = `<div style="font-weight:700">${it.title}</div><div class="small">${it.url}</div>`; const bOpen=document.createElement('button'); bOpen.className='btn'; bOpen.textContent='Open'; bOpen.onclick = ()=> openBrowserModal(it.url); const bDl=document.createElement('button'); bDl.className='btn'; bDl.textContent='Download'; bDl.onclick = async ()=>{ const url = prompt('Direct file URL to download (raw/file):', it.url); if(url){ await downloadToFS(url); renderExplorer(); if(confirm('Create desktop shortcut to this file?')) addShortcut({name:url.split('/').pop()||'file',url,icon:'🔗'}); } }; c.appendChild(bOpen); c.appendChild(bDl); curatedEl.appendChild(c); }); m.style.display='flex'; }
+
+document.getElementById('open-store').onclick = openStoreModal; document.getElementById('store-close').onclick = ()=> document.getElementById('store-modal').style.display='none';
+
+// Install from store fields
+document.getElementById('store-install').onclick = ()=>{
+  const name = document.getElementById('store-name').value.trim();
+  const url = document.getElementById('store-url').value.trim();
+  if(!name || !url) return alert('Informe nome e URL para instalar.');
+  const nurl = normalizeUrl(url);
+  addShortcut({name, url:nurl, icon: name[0]});
+  alert('App instalado: ' + name);
+}
+document.getElementById('store-download').onclick = async ()=>{ const u = document.getElementById('store-url').value.trim(); if(!u) return alert('Informe URL'); await downloadToFS(u); renderExplorer(); document.getElementById('store-url').value = ''; };
+
+async function downloadToFS(url,name){ try{ const res = await fetch(url); if(!res.ok){ alert('Fetch failed: ' + res.status); return null; } const blob = await res.blob(); let text=null; try{ text = await blob.text(); }catch(e){} const filename = name || (new URL(url)).pathname.split('/').pop() || ('file_' + Date.now()); const key = FS_PREFIX + filename; if(text !== null){ fsWrite(key, text); } else { fsWrite(key, '<<BINARY:' + blob.size + ' bytes>>'); const blobUrl = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=blobUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(blobUrl); } alert('Saved to FS: ' + filename); return key; }catch(e){ alert('download error: ' + (e && e.message ? e.message : e)); return null; } }
+
+// Explorer
+function renderExplorer(){ const modal=document.getElementById('explorer-modal'); const grid=document.getElementById('files-grid'); const folders=document.getElementById('folders-list'); grid.innerHTML=''; folders.innerHTML=''; const keys=fsListKeys(); const foldersSet=new Set(); keys.forEach(k=>{ const path=k.slice(FS_PREFIX.length); const segs=path.split('/'); if(segs.length>1) foldersSet.add(segs[0]+'/'); const name=segs.pop(); const content=fsRead(k); const card=document.createElement('div'); card.className='file-card'; let thumb=`<div class="thumb">${name}</div>`; if(/\.(png|jpg|jpeg|gif|webp)$/i.test(name) && content && content.indexOf('data:')===0) thumb = `<div class="thumb"><img src="${content}" style="max-width:100%;max-height:90px;border-radius:6px"/></div>`; const info=`<div style="font-weight:700;margin-top:6px">${name}</div><div class="small">${content? (content.length+' bytes') : '0 bytes'}</div>`; const controls=document.createElement('div'); controls.className='controls'; const btnPreview=document.createElement('button'); btnPreview.className='btn'; btnPreview.textContent='Preview'; btnPreview.onclick = ()=> { if(content && content.length<200000) openPreview(name,content); else alert('Large or binary'); }; const btnDL=document.createElement('button'); btnDL.className='btn'; btnDL.textContent='Download'; btnDL.onclick = ()=> { const blob=new Blob([content||''],{type:'application/octet-stream'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }; const btnDel=document.createElement('button'); btnDel.className='btn'; btnDel.textContent='Delete'; btnDel.onclick = ()=> { if(confirm('Delete '+name+'?')){ fsRemove(k); renderExplorer(); } }; controls.appendChild(btnPreview); controls.appendChild(btnDL); controls.appendChild(btnDel); card.innerHTML = thumb + info; card.appendChild(controls); grid.appendChild(card); }); Array.from(foldersSet).sort().forEach(f=>{ const d=document.createElement('div'); d.textContent=f; d.onclick = ()=> alert('Folder: '+f+' (virtual)'); folders.appendChild(d); }); modal.style.display='flex'; }
+
+document.getElementById('open-explorer').onclick = ()=> renderExplorer(); document.getElementById('explorer-close').onclick = ()=> document.getElementById('explorer-modal').style.display='none'; document.getElementById('explorer-refresh').onclick = renderExplorer; document.getElementById('mk-folder').onclick = ()=>{ const name=document.getElementById('new-folder').value.trim(); if(!name) return alert('Informe nome da pasta'); const key=FS_PREFIX + name + '/.folder'; fsWrite(key,'FOLDER'); document.getElementById('new-folder').value=''; renderExplorer(); };
+
+document.getElementById('file-upload').addEventListener('change', async (e)=>{ const files=Array.from(e.target.files); for(const f of files){ try{ const text = await f.text(); fsWrite(FS_PREFIX + f.name, text); }catch(err){ fsWrite(FS_PREFIX + f.name, '<<BINARY:uploaded>>'); } } e.target.value=''; renderExplorer(); });
+
+function openPreview(name, content){ const win = makeWindow('Preview: ' + name, {w:760,h:520,left:100,top:80}); win.body.innerHTML = '<pre style="white-space:pre-wrap;color:#cfe;background:#001;padding:12px;border-radius:6px;max-height:100%;overflow:auto">' + escapeHtml(content) + '</pre>'; }
+
+// Settings
+function applyWallpaper(url){ const el=document.getElementById('wallpaper'); if(!url){ el.style.backgroundImage=''; LS.removeItem(CFG_WALL); return; } el.style.backgroundImage = 'url("'+url+'")'; LS.setItem(CFG_WALL,url); }
+function applyFont(size){ if(!size) size='16px'; document.documentElement.style.fontSize = size; LS.setItem(CFG_FONT,size); }
+document.getElementById('open-settings').onclick = ()=>{ const m=document.getElementById('settings-modal'); m.style.display='flex'; document.getElementById('cfg-wall').value = LS.getItem(CFG_WALL) || ''; document.getElementById('cfg-font').value = LS.getItem(CFG_FONT) || getComputedStyle(document.documentElement).fontSize; };
+document.getElementById('cfg-close').onclick = ()=> document.getElementById('settings-modal').style.display='none'; document.getElementById('cfg-save').onclick = ()=>{ applyWallpaper(document.getElementById('cfg-wall').value.trim()); applyFont(document.getElementById('cfg-font').value.trim()); document.getElementById('settings-modal').style.display='none'; alert('Saved settings'); };
+document.getElementById('cfg-reset').onclick = ()=>{ applyWallpaper(''); applyFont('16px'); alert('Reset'); };
+
+// Add shortcut UI
+document.getElementById('add-shortcut').onclick = ()=>{ const name = prompt('Shortcut name'); if(!name) return; const url = prompt('Target URL (site or file)'); if(!url) return; addShortcut({name,url,icon:name[0]||'🔗'}); };
+
+// Start menu toggle
+const startMenu = document.getElementById('start-menu'); document.getElementById('btn-start').onclick = ()=>{ startMenu.style.display = startMenu.style.display === 'flex' ? 'none' : 'flex'; };
+
+// Helpers & init
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Clock
+setInterval(()=>{ document.getElementById('clock').textContent = new Date().toLocaleTimeString(); },1000);
+
+// Init
+(function init(){ const w = LS.getItem(CFG_WALL); if(w) applyWallpaper(w); const f = LS.getItem(CFG_FONT); if(f) applyFont(f); if(loadApps().length===0){ saveApps([{id:'browser',name:'Browser',url:'https://example.org',icon:'🌐'},{id:'store',name:'Store',url:'',icon:'🛒'},{id:'explorer',name:'Files',url:'',icon:'📁'}]); } renderDesktop();
+})();
+
+</script>
+</body>
+</html>
